@@ -25,45 +25,52 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r app/requirements.txt
-        pip install pyinstaller
         
-    - name: Build executable (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Build executable using build_executable.py
       run: |
         cd app
-        pyinstaller --onefile --windowed --name="剂量验证预测系统" --add-data="model_loader.py;." gui_fixed.py
-        
-    - name: Build executable (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        cd app
-        pyinstaller --onefile --windowed --name="剂量验证预测系统" --add-data="model_loader.py:." gui_fixed.py
-        
-    - name: Build executable (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd app
-        pyinstaller --onefile --name="剂量验证预测系统" --add-data="model_loader.py:." gui_fixed.py
+        python build_executable.py
         
     - name: Create release package
       run: |
         mkdir release
+        
+        # 复制可执行文件
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp app/dist/剂量验证预测系统.exe release/
+          cp app/dist/剂量验证预测系统.exe release/ 2>/dev/null || cp app/dist/*.exe release/
           echo "ASSET_NAME=剂量验证预测系统-windows.exe" >> $GITHUB_ENV
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          cp -r app/dist/剂量验证预测系统.app release/ || cp app/dist/剂量验证预测系统 release/
+          cp -r app/dist/剂量验证预测系统.app release/ 2>/dev/null || cp app/dist/剂量验证预测系统 release/ 2>/dev/null || cp app/dist/* release/
           tar -czf release/剂量验证预测系统-macos.tar.gz -C release .
           echo "ASSET_NAME=剂量验证预测系统-macos.tar.gz" >> $GITHUB_ENV
         else
-          cp app/dist/剂量验证预测系统 release/
+          cp app/dist/剂量验证预测系统 release/ 2>/dev/null || cp app/dist/* release/
           tar -czf release/剂量验证预测系统-linux.tar.gz -C release .
           echo "ASSET_NAME=剂量验证预测系统-linux.tar.gz" >> $GITHUB_ENV
         fi
+        
+        # 创建说明文件
+        echo "剂量验证预测系统 - ${{ matrix.os }} 版本" > release/README.txt
+        echo "构建时间: $(date)" >> release/README.txt
+        echo "" >> release/README.txt
+        echo "使用说明:" >> release/README.txt
+        echo "1. 下载并解压此文件" >> release/README.txt
+        echo "2. 将您的模型文件(result目录)放在可执行文件同一目录下" >> release/README.txt
+        echo "3. 双击运行可执行文件" >> release/README.txt
+        echo "" >> release/README.txt
+        echo "注意: 模型文件需要单独提供，不包含在此安装包中" >> release/README.txt
       shell: bash
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.os }}-executable
-        path: release/ 
+        path: release/
+        
+    - name: List build results (debug)
+      run: |
+        echo "=== Build directory contents ==="
+        ls -la app/dist/ || echo "No dist directory found"
+        echo "=== Release directory contents ==="
+        ls -la release/ || echo "No release directory found"
+      shell: bash 
