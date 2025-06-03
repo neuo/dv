@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 
 """
-打包脚本 - 将应用打包为可执行文件
+Build Script - Package application as executable
 
-使用PyInstaller将Python应用打包为独立的可执行文件，
-支持Windows (.exe)、macOS (.app)、Linux等平台。
+Use PyInstaller to package Python application as standalone executable,
+supporting Windows (.exe), macOS (.app), Linux platforms.
 
-使用方法:
+Usage:
     python app/build_executable.py
 
-依赖:
+Dependencies:
     pip install pyinstaller
 """
 
@@ -22,30 +22,30 @@ import platform
 from pathlib import Path
 
 def check_pyinstaller():
-    """检查PyInstaller是否安装"""
+    """Check if PyInstaller is installed"""
     try:
         import PyInstaller
-        print(f"✓ PyInstaller已安装 (版本: {PyInstaller.__version__})")
+        print(f"✓ PyInstaller installed (version: {PyInstaller.__version__})")
         return True
     except ImportError:
-        print("✗ PyInstaller未安装")
+        print("✗ PyInstaller not installed")
         return False
 
 def install_pyinstaller():
-    """安装PyInstaller"""
-    print("正在安装PyInstaller...")
+    """Install PyInstaller"""
+    print("Installing PyInstaller...")
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], 
                       check=True)
-        print("✓ PyInstaller安装成功")
+        print("✓ PyInstaller installed successfully")
         return True
     except subprocess.CalledProcessError:
-        print("✗ PyInstaller安装失败")
+        print("✗ PyInstaller installation failed")
         return False
 
 def check_dependencies():
-    """检查必要的依赖"""
-    print("检查依赖...")
+    """Check required dependencies"""
+    print("Checking dependencies...")
     
     required_modules = [
         'torch', 'numpy', 'pandas', 'openpyxl', 
@@ -67,45 +67,45 @@ def check_dependencies():
             missing_modules.append(module)
     
     if missing_modules:
-        print(f"缺少依赖: {', '.join(missing_modules)}")
+        print(f"Missing dependencies: {', '.join(missing_modules)}")
         return False
     
     return True
 
 def build_executable():
-    """构建可执行文件"""
-    print("开始构建可执行文件...")
+    """Build executable file"""
+    print("Starting executable build...")
     
-    # 确定操作系统
+    # Determine operating system
     system = platform.system()
-    print(f"当前系统: {system}")
+    print(f"Current system: {system}")
     
-    # 基础PyInstaller命令参数
+    # Basic PyInstaller command parameters
     cmd = [
         "pyinstaller",
-        "--onefile",                    # 打包成单个文件
-        "--name=剂量验证预测系统",        # 可执行文件名称
-        "--clean",                      # 清理缓存
+        "--onefile",                    # Package as single file
+        "--name=DoseVerificationSystem", # Executable file name
+        "--clean",                      # Clean cache
     ]
     
-    # 根据操作系统添加特定参数
+    # Add system-specific parameters
     if system == "Windows":
-        cmd.append("--windowed")        # Windows下隐藏控制台
+        cmd.append("--windowed")        # Hide console on Windows
     elif system == "Darwin":  # macOS
-        cmd.append("--windowed")        # macOS下创建.app包
+        cmd.append("--windowed")        # Create .app bundle on macOS
     
-    # 不打包模型文件到可执行文件中（避免文件过大问题）
-    # 模型文件将在安装包中单独提供
+    # Don't package model files into executable (avoid file size issues)
+    # Model files will be provided separately in installation package
     result_dir = Path("../result")
     if result_dir.exists():
-        print("✓ 检测到模型文件，将在安装包中单独提供（不打包到可执行文件中）")
+        print("✓ Model files detected, will be provided separately (not packaged in executable)")
     else:
-        print("警告: 未找到result目录")
+        print("Warning: result directory not found")
     
-    # 添加额外的Python文件
+    # Add additional Python files
     cmd.extend(["--add-data", f"model_loader.py{os.pathsep}."])
     
-    # 添加隐藏导入
+    # Add hidden imports
     hidden_imports = [
         "torch", "torch.nn", "torch.optim",
         "numpy", "pandas", "openpyxl", 
@@ -117,193 +117,193 @@ def build_executable():
     for module in hidden_imports:
         cmd.extend(["--hidden-import", module])
     
-    # 添加主文件
+    # Add main file
     cmd.append("gui_fixed.py")
     
     try:
-        print("执行打包命令...")
-        print(f"命令: {' '.join(cmd)}")
+        print("Executing build command...")
+        print(f"Command: {' '.join(cmd)}")
         
-        # 执行打包命令
+        # Execute build command
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("✓ 可执行文件构建成功")
+        print("✓ Executable build successful")
         
-        # 显示输出位置
+        # Show output location
         dist_dir = Path("dist")
         if dist_dir.exists():
             exe_files = list(dist_dir.glob("*"))
             if exe_files:
                 exe_file = exe_files[0]
                 file_size = exe_file.stat().st_size / (1024 * 1024)  # MB
-                print(f"可执行文件: {exe_file.absolute()}")
-                print(f"文件大小: {file_size:.1f} MB")
+                print(f"Executable file: {exe_file.absolute()}")
+                print(f"File size: {file_size:.1f} MB")
         
         return True
         
     except subprocess.CalledProcessError as e:
-        print(f"✗ 构建失败: {e}")
+        print(f"✗ Build failed: {e}")
         if e.stdout:
-            print("标准输出:", e.stdout)
+            print("Standard output:", e.stdout)
         if e.stderr:
-            print("错误输出:", e.stderr)
+            print("Error output:", e.stderr)
         return False
     except FileNotFoundError:
-        print("✗ 未找到pyinstaller命令")
+        print("✗ pyinstaller command not found")
         return False
 
 def create_installer_package():
-    """创建安装包"""
-    print("创建安装包...")
+    """Create installation package"""
+    print("Creating installation package...")
     
     dist_dir = Path("dist")
     if not dist_dir.exists():
-        print("✗ 未找到dist目录")
+        print("✗ dist directory not found")
         return False
     
-    # 查找可执行文件
+    # Find executable file
     exe_files = list(dist_dir.glob("*"))
     if not exe_files:
-        print("✗ 未找到可执行文件")
+        print("✗ No executable file found")
         return False
     
     exe_file = exe_files[0]
     
-    # 创建安装包目录
-    package_dir = Path("剂量验证预测系统_安装包")
+    # Create installation package directory
+    package_dir = Path("DoseVerificationSystem_Package")
     if package_dir.exists():
         shutil.rmtree(package_dir)
     package_dir.mkdir()
     
-    # 复制可执行文件
+    # Copy executable file
     shutil.copy2(exe_file, package_dir)
-    print(f"✓ 复制可执行文件: {exe_file.name}")
+    print(f"✓ Copied executable file: {exe_file.name}")
     
-    # 复制模型文件
+    # Copy model files
     result_dir = Path("../result")
     if result_dir.exists():
         package_result_dir = package_dir / "result"
         shutil.copytree(result_dir, package_result_dir)
         
-        # 计算模型文件总大小
+        # Calculate total model file size
         total_size = sum(f.stat().st_size for f in package_result_dir.glob("*.pth"))
         total_size_gb = total_size / (1024 * 1024 * 1024)
-        print(f"✓ 复制模型文件: {len(list(package_result_dir.glob('*.pth')))} 个文件, {total_size_gb:.1f} GB")
+        print(f"✓ Copied model files: {len(list(package_result_dir.glob('*.pth')))} files, {total_size_gb:.1f} GB")
     else:
-        print("警告: 未找到模型文件")
+        print("Warning: Model files not found")
     
-    # 创建说明文件
-    readme_content = """剂量验证预测系统
-==================
+    # Create instruction file
+    readme_content = """Dose Verification Prediction System
+====================================
 
-这是一个基于深度学习的剂量验证预测系统。
+This is a deep learning-based dose verification prediction system.
 
-安装说明:
-1. 将整个文件夹复制到您希望的位置
-2. 双击可执行文件运行即可使用
-3. 请保持可执行文件和result文件夹在同一目录下
+Installation Instructions:
+1. Copy the entire folder to your desired location
+2. Double-click the executable file to run
+3. Keep the executable file and result folder in the same directory
 
-使用说明:
-1. 选择模型类型（CNN、Transformer、CNNTransformer、CNN_SINGLE）
-2. 选择精度配置
-3. 选择包含数据文件的文件夹（需包含ADT_plan.xlsx、Ref_measure.xlsx、Ref_plan.xlsx）
-4. 点击"开始预测"
+Usage Instructions:
+1. Select model type (CNN, Transformer, CNNTransformer, CNN_SINGLE)
+2. Select precision configuration
+3. Select folder containing data files (must include ADT_plan.xlsx, Ref_measure.xlsx, Ref_plan.xlsx)
+4. Click "Start Prediction"
 
-文件结构:
-- 剂量验证预测系统 (可执行文件)
-- result/ (模型文件目录，必需)
-- 使用说明.txt (本文件)
+File Structure:
+- DoseVerificationSystem (executable file)
+- result/ (model file directory, required)
+- Instructions.txt (this file)
 
-支持的文件格式:
-- Excel文件 (.xlsx, .xls)
+Supported File Formats:
+- Excel files (.xlsx, .xls)
 
-系统要求:
-- Windows 10/11, macOS 10.14+, 或 Linux
-- 至少4GB内存
-- 至少3GB可用磁盘空间
+System Requirements:
+- Windows 10/11, macOS 10.14+, or Linux
+- At least 4GB RAM
+- At least 3GB available disk space
 
-注意事项:
-- 首次运行可能需要较长时间加载模型
-- 请确保有足够的内存运行深度学习模型
-- 不要删除或移动result文件夹中的模型文件
+Notes:
+- First run may take longer to load models
+- Ensure sufficient memory for deep learning models
+- Do not delete or move model files in result folder
 
-技术支持:
-如有问题，请联系开发团队。
+Technical Support:
+Contact development team for issues.
 
-版本: 1.0
-构建时间: {build_time}
+Version: 1.0
+Build time: {build_time}
 """
     
     from datetime import datetime
-    readme_path = package_dir / "使用说明.txt"
+    readme_path = package_dir / "Instructions.txt"
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(readme_content.format(build_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     
-    # 创建快速安装脚本
+    # Create quick installation script
     if platform.system() == "Windows":
         install_script = """@echo off
-echo 剂量验证预测系统快速安装
-echo ========================
+echo Dose Verification System Quick Install
+echo =======================================
 
 set "desktop=%USERPROFILE%\\Desktop"
-set "target_dir=%desktop%\\剂量验证预测系统"
+set "target_dir=%desktop%\\DoseVerificationSystem"
 
-echo 正在复制到桌面...
+echo Copying to desktop...
 if not exist "%target_dir%" mkdir "%target_dir%"
 xcopy /E /I /Y "%~dp0*" "%target_dir%\\"
 
 if %errorlevel% == 0 (
-    echo ✓ 安装成功！
-    echo 程序已安装到桌面的"剂量验证预测系统"文件夹
-    echo 您现在可以运行其中的可执行文件
+    echo ✓ Installation successful!
+    echo Program installed to desktop "DoseVerificationSystem" folder
+    echo You can now run the executable file
 ) else (
-    echo ✗ 安装失败
+    echo ✗ Installation failed
 )
 
 pause
 """
-        script_path = package_dir / "快速安装到桌面.bat"
+        script_path = package_dir / "QuickInstallToDesktop.bat"
         with open(script_path, "w", encoding="utf-8") as f:
             f.write(install_script)
     
     else:  # macOS/Linux
         install_script = """#!/bin/bash
-echo "剂量验证预测系统快速安装"
-echo "======================"
+echo "Dose Verification System Quick Install"
+echo "====================================="
 
 desktop="$HOME/Desktop"
-target_dir="$desktop/剂量验证预测系统"
+target_dir="$desktop/DoseVerificationSystem"
 
-echo "正在复制到桌面..."
+echo "Copying to desktop..."
 mkdir -p "$target_dir"
 cp -r "$(dirname "$0")"/* "$target_dir/"
 
 if [ $? -eq 0 ]; then
-    echo "✓ 安装成功！"
-    echo "程序已安装到桌面的'剂量验证预测系统'文件夹"
-    echo "您现在可以运行其中的可执行文件"
-    chmod +x "$target_dir/剂量验证预测系统"
+    echo "✓ Installation successful!"
+    echo "Program installed to desktop 'DoseVerificationSystem' folder"
+    echo "You can now run the executable file"
+    chmod +x "$target_dir/DoseVerificationSystem"
 else
-    echo "✗ 安装失败"
+    echo "✗ Installation failed"
 fi
 
-read -p "按回车键继续..."
+read -p "Press Enter to continue..."
 """
-        script_path = package_dir / "快速安装到桌面.sh"
+        script_path = package_dir / "QuickInstallToDesktop.sh"
         with open(script_path, "w", encoding="utf-8") as f:
             f.write(install_script)
         os.chmod(script_path, 0o755)
     
-    # 计算安装包总大小
+    # Calculate total package size
     total_package_size = sum(f.stat().st_size for f in package_dir.rglob("*") if f.is_file())
     total_package_size_gb = total_package_size / (1024 * 1024 * 1024)
     
-    print(f"✓ 安装包创建完成: {package_dir.absolute()}")
-    print(f"安装包总大小: {total_package_size_gb:.1f} GB")
+    print(f"✓ Installation package created: {package_dir.absolute()}")
+    print(f"Package total size: {total_package_size_gb:.1f} GB")
     return True
 
 def clean_build_files():
-    """清理构建文件"""
-    print("清理构建文件...")
+    """Clean build files"""
+    print("Cleaning build files...")
     
     dirs_to_remove = ["build", "__pycache__"]
     files_to_remove = ["*.spec"]
@@ -311,54 +311,62 @@ def clean_build_files():
     for dir_name in dirs_to_remove:
         if Path(dir_name).exists():
             shutil.rmtree(dir_name)
-            print(f"✓ 删除目录: {dir_name}")
+            print(f"✓ Removed directory: {dir_name}")
     
     for pattern in files_to_remove:
         for file_path in Path(".").glob(pattern):
             file_path.unlink()
-            print(f"✓ 删除文件: {file_path}")
+            print(f"✓ Removed file: {file_path}")
 
 def main():
-    """主函数"""
-    print("剂量验证预测系统打包工具")
+    """Main function"""
+    print("Dose Verification System Build Tool")
     print("=" * 50)
     
-    # 检查当前目录
+    # Check if running in CI environment
+    is_ci = os.environ.get('CI') == 'true' or os.environ.get('GITHUB_ACTIONS') == 'true'
+    if is_ci:
+        print("Running in CI environment - non-interactive mode")
+    
+    # Check current directory
     if not Path("gui_fixed.py").exists():
-        print("✗ 请在app目录下运行此脚本")
-        print("使用方法: cd app && python build_executable.py")
+        print("✗ Please run this script in the app directory")
+        print("Usage: cd app && python build_executable.py")
         sys.exit(1)
     
-    # 检查依赖
+    # Check dependencies
     if not check_dependencies():
-        print("✗ 请先安装缺少的依赖")
+        print("✗ Please install missing dependencies first")
         sys.exit(1)
     
-    # 检查PyInstaller
+    # Check PyInstaller
     if not check_pyinstaller():
         if not install_pyinstaller():
             sys.exit(1)
     
-    # 构建可执行文件
+    # Build executable
     if not build_executable():
         sys.exit(1)
     
-    # 创建安装包
+    # Create installation package
     if not create_installer_package():
-        print("警告: 安装包创建失败，但可执行文件已生成")
+        print("Warning: Installation package creation failed, but executable was generated")
     
-    # 询问是否清理构建文件
-    try:
-        choice = input("\n是否清理构建文件? (y/n): ").lower().strip()
-        if choice in ['y', 'yes', '是']:
-            clean_build_files()
-    except KeyboardInterrupt:
-        print("\n用户取消操作")
+    # Ask whether to clean build files (skip in CI)
+    if is_ci:
+        print("CI environment detected - skipping build file cleanup")
+    else:
+        try:
+            choice = input("\nClean build files? (y/n): ").lower().strip()
+            if choice in ['y', 'yes']:
+                clean_build_files()
+        except KeyboardInterrupt:
+            print("\nUser cancelled operation")
     
-    print("\n✓ 打包完成！")
-    print("您可以在以下位置找到文件:")
-    print("- 可执行文件: dist/")
-    print("- 安装包: 剂量验证预测系统_安装包/")
+    print("\n✓ Build complete!")
+    print("You can find files at:")
+    print("- Executable file: dist/")
+    print("- Installation package: DoseVerificationSystem_Package/")
 
 if __name__ == "__main__":
     main() 

@@ -9,12 +9,16 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: 1
         
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
         
@@ -27,33 +31,36 @@ jobs:
       run: |
         cd app
         python build_executable.py
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
         
     - name: Create Windows release package
       run: |
         mkdir release
         
-        # 复制Windows可执行文件
-        copy "app\dist\剂量验证预测系统.exe" "release\" 2>nul || copy "app\dist\*.exe" "release\"
+        REM Copy Windows executable file
+        copy "app\dist\DoseVerificationSystem.exe" "release\" 2>nul || copy "app\dist\*.exe" "release\"
         
-        # 创建Windows使用说明
-        echo 剂量验证预测系统 - Windows版本 > release\README.txt
-        echo 构建时间: %date% %time% >> release\README.txt
+        REM Create Windows usage instructions
+        echo Dose Verification System - Windows Version > release\README.txt
+        echo Build time: %date% %time% >> release\README.txt
         echo. >> release\README.txt
-        echo 使用说明: >> release\README.txt
-        echo 1. 下载并解压此文件 >> release\README.txt
-        echo 2. 将您的模型文件(result目录)放在可执行文件同一目录下 >> release\README.txt
-        echo 3. 双击运行剂量验证预测系统.exe >> release\README.txt
+        echo Usage Instructions: >> release\README.txt
+        echo 1. Download and extract this file >> release\README.txt
+        echo 2. Place your model files (result directory) in the same directory as the executable >> release\README.txt
+        echo 3. Double-click to run DoseVerificationSystem.exe >> release\README.txt
         echo. >> release\README.txt
-        echo 注意: 模型文件需要单独提供，不包含在此安装包中 >> release\README.txt
+        echo Note: Model files need to be provided separately, not included in this package >> release\README.txt
         echo. >> release\README.txt
-        echo 系统要求: >> release\README.txt
+        echo System Requirements: >> release\README.txt
         echo - Windows 10/11 >> release\README.txt
-        echo - 至少4GB内存 >> release\README.txt
-        echo - 至少3GB可用磁盘空间 >> release\README.txt
+        echo - At least 4GB RAM >> release\README.txt
+        echo - At least 3GB available disk space >> release\README.txt
       shell: cmd
         
     - name: Upload Windows executable
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-executable
         path: release/
